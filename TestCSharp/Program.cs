@@ -10,6 +10,8 @@ namespace TestCSharp
     {
         static void Main(string[] args)
         {
+            int 数字 = 123;
+            System.Console.WriteLine(数字);
             string ss = Console.ReadLine();
             string bb = doSomething(ss);
             Console.WriteLine(ss);
