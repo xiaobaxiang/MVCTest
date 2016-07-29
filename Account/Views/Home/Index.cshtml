@@ -1,7 +1,49 @@
-﻿
+﻿@model List<UserInfo>
 @{
-    ViewBag.Title = "Index";
+    ViewBag.Title = "记账";
 }
-
-<h2>Index</h2>
-
+<h2>添加</h2>
+<button class="btn btn-default btn-primary pull-right" onclick="javascript:submit()">提交</button>
+<div class="table-responsive">
+    <table class="table table-hover table-bordered">
+        <thead>
+            <tr>
+                <td>#</td>
+                <td>姓名</td>
+                <td>类别</td>
+                <td>花费</td>
+                <td>时间</td>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+<form id="CostForm" method="post" action="@Url.Action("Index","Home")">
+    <input type="hidden" id="UploadPriceWithUserIDDate" name="UploadPriceWithUserIDDate" value="" />
+    <div class="form-group">
+        分摊人:
+        @foreach (UserInfo u in Model)
+        {
+            <input type="checkbox" id="UserID@(u.Id)" name="UserID@(u.Id)" checked="checked" /><label for="UserID@(u.Id)">@(u.Name)</label>@Html.Raw("&nbsp;")
+        }
+    </div>
+    <br />
+    <div class="form-group">
+        付款人:
+        @foreach (UserInfo u in Model)
+            {
+            <input type="radio" id="CostUserID@(u.Id)" name="CostUser" class="control-label" /><label class="control-label" for="CostUserID@(u.Id)">@(u.Name)</label>@Html.Raw("&nbsp;")
+        }
+    </div>
+    <br />
+    <div class="form-inline">
+        <div class="form-group">
+            <div class="input-group">
+                <div class="input-group-addon">花费</div>
+                <input type="text" class="form-control" id="cost" placeholder="00.00">
+                <div class="input-group-addon">元</div>
+                <button id="submint" class="btn btn-sm btn-info" onclick="javascript:add()">添加</button>
+            </div>
+        </div>
+    </div>
+</form>
