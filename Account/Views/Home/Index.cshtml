@@ -5,14 +5,15 @@
 <h2>添加</h2>
 <button class="btn btn-default btn-primary pull-right" onclick="javascript:submit()">提交</button>
 <div class="table-responsive">
-    <table class="table table-hover table-bordered">
+    <table class="table table-hover table-bordered" id="listCost">
         <thead>
             <tr>
                 <td>#</td>
                 <td>姓名</td>
                 <td>类别</td>
-                <td>花费</td>
+                <td>花费(元)</td>
                 <td>时间</td>
+                <td>分摊人</td>
             </tr>
         </thead>
         <tbody></tbody>
@@ -20,30 +21,95 @@
 </div>
 <form id="CostForm" method="post" action="@Url.Action("Index","Home")">
     <input type="hidden" id="UploadPriceWithUserIDDate" name="UploadPriceWithUserIDDate" value="" />
-    <div class="form-group">
-        分摊人:
-        @foreach (UserInfo u in Model)
-        {
-            <input type="checkbox" id="UserID@(u.Id)" name="UserID@(u.Id)" checked="checked" /><label for="UserID@(u.Id)">@(u.Name)</label>@Html.Raw("&nbsp;")
-        }
-    </div>
-    <br />
-    <div class="form-group">
-        付款人:
-        @foreach (UserInfo u in Model)
-            {
-            <input type="radio" id="CostUserID@(u.Id)" name="CostUser" class="control-label" /><label class="control-label" for="CostUserID@(u.Id)">@(u.Name)</label>@Html.Raw("&nbsp;")
-        }
-    </div>
-    <br />
-    <div class="form-inline">
-        <div class="form-group">
-            <div class="input-group">
-                <div class="input-group-addon">花费</div>
-                <input type="text" class="form-control" id="cost" placeholder="00.00">
-                <div class="input-group-addon">元</div>
-                <button id="submint" class="btn btn-sm btn-info" onclick="javascript:add()">添加</button>
+    <div class="row">
+        <div class="col-md-3">
+            <div class="form-group" id="shareCost">
+                分摊人:
+                @foreach (UserInfo u in Model)
+                {
+                    <input type="checkbox" id="SharedUserID@(u.Id)" name="SharedUserID@(u.Id)" data-userid="@(u.Id)" data-username="@(u.Name)" checked="checked" /><label for="SharedUserID@(u.Id)">@(u.Name)</label>@Html.Raw("&nbsp;")
+                }
+            </div>
+            <div class="form-group" id="payUser">
+                付款人:
+                @foreach (UserInfo u in Model)
+                {
+                    <input type="radio" id="CostUserID@(u.Id)" name="CostUser" data-userid="@(u.Id)" data-username="@(u.Name)" class="control-label" checked="checked" /><label class="control-label" for="CostUserID@(u.Id)">@(u.Name)</label>@Html.Raw("&nbsp;")
+                }
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <div class="input-group">
+                    <div class="input-group-addon">类型</div>
+                    <select id="costtype" class="form-control">
+                        @{List<TypeInfo> listtypeinfo = (List<TypeInfo>)ViewBag.listTypeInfo;
+                            for (int i = 0; i < listtypeinfo.Count; i++)
+                            {
+                                TypeInfo t = listtypeinfo[i];
+                                if (i == 0)
+                                {
+                                    <option selected="selected" value="@(t.Id)">@(t.TypeName)</option>
+                                }
+                                else
+                                {
+                                    <option value="@(t.Id)">@(t.TypeName)</option>
+                                }
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+
+        </div>
+        <div class="col-md-3">
+            <div class="form-group" id="payUser">
+                <div class="input-group">
+                    <div class="input-group-addon">时间</div>
+                    <input type="text" id="payDate" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-inline">
+                <div class="form-group">
+                    <div class="input-group">
+                        <div class="input-group-addon">花费</div>
+                        <input type="text" class="form-control" id="costMoney" placeholder="00.00" />
+                        <div class="input-group-addon">元</div>
+                        <a id="submint" class="btn btn-sm btn-info" href="#" onclick="javascript:add();">添加</a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </form>
+<script>
+    function add() {
+        var trs = '<tr>';
+        trs += "<td>" + $("#listCost tr").length + "</td>";
+        var payUser = $("#payUser input:checked");//付款人
+        if (payUser.length == 0)
+            return;
+        trs += "<td><input type='hidden' name='userid' value='" + $(payUser[0]).attr("data-userid") + "'/>" + $(payUser[0]).attr("data-username");
+        if ($("#costMoney") == '') {
+            alert('请输入金额');
+            return;
+        }
+        trs += "<td>" + $("#costtype option:selected").text() + "</td>";
+        trs += "<td contenteditable='true'>" + $("#costMoney").val() + "</td>";
+        trs += "<td>" + $("#payDate").val() + "</td>";
+        var shareUser = $("#shareCost input[type='checkbox']");//分摊人
+        trs += "<td>";
+        for (var i = 0; i < shareUser.length; i++) {
+            if ($(shareUser[i]).prop("checked")) {
+                var userid = $(shareUser[i]).attr("data-userid");
+                var username = $(shareUser[i]).attr("data-username");
+                trs += "<input type='hidden' name='shareId' value='" + userid + "'/>" + username;
+            }
+        }
+        trs += "</td>";
+        trs += "</tr>";
+        $("#listCost >tbody").append(trs);
+    }
+</script>

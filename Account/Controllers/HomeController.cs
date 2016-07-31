@@ -17,6 +17,10 @@ namespace Account.Controllers
             string sqlstr = "select * from [UserInfo]";
             DataSet oDS = dbh.ExecuteQuery(sqlstr);
             List<UserInfo> lisu = oDS.Tables[0].TabeToList<UserInfo>().ToList();
+            sqlstr = "select * from [TypeInfo] where ModelName = 'Cost' order by ID";
+            oDS = dbh.ExecuteQuery(sqlstr);
+            List<TypeInfo> list = oDS.Tables[0].TabeToList<TypeInfo>().ToList();
+            ViewBag.listTypeInfo = list;
             return View(lisu);
         }
 

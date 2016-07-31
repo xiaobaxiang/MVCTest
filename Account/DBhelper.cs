@@ -38,7 +38,7 @@ namespace Account
                 }
                 catch (Exception e)
                 {
-                    logError(e);
+                    e.logError();
                 }
                 finally
                 {
@@ -75,7 +75,7 @@ namespace Account
                 }
                 catch (Exception e)
                 {
-                    logError(e);
+                    e.logError();
                 }
                 finally
                 {
@@ -140,7 +140,7 @@ namespace Account
                 }
                 catch (Exception e)
                 {
-                    logError(e);
+                    e.logError();
                 }
                 finally
                 {
@@ -150,22 +150,6 @@ namespace Account
                 }
             }
             return null;
-        }
-
-        private void logError(Exception e)
-        {
-            string fullpath = AppDomain.CurrentDomain.BaseDirectory + "Error";
-            if (!Directory.Exists(fullpath)) { Directory.CreateDirectory(fullpath); }
-            string path = Path.Combine(fullpath, DateTime.Now.ToString("yyyy-MM-dd") + ".txt");
-            if (!File.Exists(path))
-                File.Create(path);
-            string content = "&&&&&&&&&&&&&&&出错啦&&&&&&&&&&&&&&&\r\n";
-            content += DateTime.Now.ToString("yyyy-MM-dd hh24:mm:ss.fff") + "\r\n";
-            content += e.Message + "\r\n";
-            content += e.StackTrace + "\r\n";
-            content += "*******************************\r\n";
-            File.AppendAllText(path, content,Encoding.UTF8);
-            return ;
         }
     }
 
@@ -414,7 +398,7 @@ namespace Account
         }
     }
 
-    public static class StringExten
+    public static class CommonExten
     {
         public static T StringConvert<T>(this string str) where T:struct
         {
@@ -424,6 +408,24 @@ namespace Account
             object o= memberinfo.Invoke(str,null);
             bool b = (bool)o;
             return obj;
+        }
+
+        public static Exception logError(this Exception e)
+        {
+            string fullpath = AppDomain.CurrentDomain.BaseDirectory + "Error";
+            if (!Directory.Exists(fullpath)) { Directory.CreateDirectory(fullpath); }
+            string filePath = fullpath + "\\" + DateTime.Now.ToString("yyyy-MM-dd") + ".txt";
+            if (!File.Exists(filePath))
+                File.Create(filePath);
+            string content = "=========================出错了!==============================\r\n";
+            content += "出错时间:" + DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss") + "\r\n";
+            content += "错误源:" + e.Source + "\r\n";
+            content += "异常消息:" + e.Message + "\r\n";
+            content += "当前方法:" + e.TargetSite + "\r\n";
+            content += "堆栈信息:" + e.StackTrace + "\r\n";
+            content += "=============================================================\r\n\r\n";
+            File.AppendAllText(filePath, content, Encoding.UTF8);
+            return e;
         }
     }
 }
