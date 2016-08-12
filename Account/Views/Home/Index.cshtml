@@ -3,42 +3,50 @@
     ViewBag.Title = "记账";
 }
 <h2>添加</h2>
-<button class="btn btn-default btn-primary pull-right" onclick="javascript:submit()">提交</button>
-<div class="table-responsive">
-    <table class="table table-hover table-bordered" id="listCost">
-        <thead>
-            <tr>
-                <td>#</td>
-                <td>姓名</td>
-                <td>类别</td>
-                <td>花费(元)</td>
-                <td>时间</td>
-                <td>分摊人</td>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-</div>
-<form id="CostForm" method="post" action="@Url.Action("Index","Home")">
+<form id="CostForm" method="post" action="#">
+    <input type="submit" class="btn btn-default btn-primary pull-right" value="提交" />
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered" id="listCost">
+            <thead>
+                <tr>
+                    <td>#</td>
+                    <td>姓名</td>
+                    <td>类别</td>
+                    <td>时间</td>
+                    <td>花费(元)</td>
+                    <td>
+                        @foreach (UserInfo u in Model)
+                        {
+                            <input type="hidden" id="SumSharedUserID@(u.Id)" name="SumSharedUserID@(u.Id)" data-userid="@(u.Id)" data-username="@(u.Name)" sumAvgMoney='0.00' />@(u.Name)<label id="labSumSharedUserID@(u.Id)">@("(0.00)")</label>
+                        }
+                    </td>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
     <input type="hidden" id="UploadPriceWithUserIDDate" name="UploadPriceWithUserIDDate" value="" />
+    <input type="hidden" id="AvgPriceWithUser" name="AvgPriceWithUser" value="" />
     <div class="row">
-        <div class="col-md-3">
-            <div class="form-group" id="shareCost">
-                分摊人:
-                @foreach (UserInfo u in Model)
-                {
-                    <input type="checkbox" id="SharedUserID@(u.Id)" name="SharedUserID@(u.Id)" data-userid="@(u.Id)" data-username="@(u.Name)" checked="checked" /><label for="SharedUserID@(u.Id)">@(u.Name)</label>@Html.Raw("&nbsp;")
-                }
-            </div>
-            <div class="form-group" id="payUser">
-                付款人:
-                @foreach (UserInfo u in Model)
-                {
-                    <input type="radio" id="CostUserID@(u.Id)" name="CostUser" data-userid="@(u.Id)" data-username="@(u.Name)" class="control-label" checked="checked" /><label class="control-label" for="CostUserID@(u.Id)">@(u.Name)</label>@Html.Raw("&nbsp;")
-                }
+        <div class="col-sm-3 col-md-3">
+            <div class="form-inline">
+                <div class="form-group" id="shareCost">
+                    分摊人:<br />
+                    @foreach (UserInfo u in Model)
+                    {
+                        <input type="checkbox" id="SharedUserID@(u.Id)" name="SharedUserID@(u.Id)" data-userid="@(u.Id)" data-username="@(u.Name)" checked="checked" /><label for="SharedUserID@(u.Id)">@(u.Name)</label><br />
+                    }
+                </div>
+                <div class="form-group" id="payUser">
+                    付款人:<br />
+                    @foreach (UserInfo u in Model)
+                    {
+                        <input type="radio" id="CostUserID@(u.Id)" name="CostUser" data-userid="@(u.Id)" data-username="@(u.Name)" class="control-label" checked="checked" /><label class="control-label" for="CostUserID@(u.Id)">@(u.Name)</label><br />
+                    }
+                </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-sm-3 col-md-3">
             <div class="form-group">
                 <div class="input-group">
                     <div class="input-group-addon">类型</div>
@@ -62,15 +70,15 @@
             </div>
 
         </div>
-        <div class="col-md-3">
+        <div class="col-sm-3 col-md-3">
             <div class="form-group" id="payUser">
                 <div class="input-group">
                     <div class="input-group-addon">时间</div>
-                    <input type="text" id="payDate" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                    <input type="text" id="payDate" name="payDate" class="form-control" value="@DateTime.Now.ToString(" yyyy-MM-dd")" />
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-sm-3 col-md-3">
             <div class="form-inline">
                 <div class="form-group">
                     <div class="input-group">
@@ -86,30 +94,57 @@
 </form>
 <script>
     function add() {
+        var UploadPriceWithUserIDDate = $("#UploadPriceWithUserIDDate").val();
+        var AvgPriceWithUser = $("#AvgPriceWithUser").val();
+        var curruplod = "";
+        var avgprice = "";
         var trs = '<tr>';
         trs += "<td>" + $("#listCost tr").length + "</td>";
         var payUser = $("#payUser input:checked");//付款人
         if (payUser.length == 0)
             return;
         trs += "<td><input type='hidden' name='userid' value='" + $(payUser[0]).attr("data-userid") + "'/>" + $(payUser[0]).attr("data-username");
+        curruplod = $(payUser[0]).attr("data-userid") + "_";
         if ($("#costMoney") == '') {
             alert('请输入金额');
             return;
         }
         trs += "<td>" + $("#costtype option:selected").text() + "</td>";
-        trs += "<td contenteditable='true'>" + $("#costMoney").val() + "</td>";
+        curruplod += $("#costtype").val() + "_";
         trs += "<td>" + $("#payDate").val() + "</td>";
+        curruplod += $("#payDate").val() + "_";
+        trs += "<td>" + $("#costMoney").val() + "</td>";
+        curruplod += $("#costMoney").val();
         var shareUser = $("#shareCost input[type='checkbox']");//分摊人
+        var avg = $("#costMoney").val() / parseFloat($("#shareCost input[type='checkbox']:checked").length);
+        if ($("#shareCost input[type='checkbox']:checked").length == 0) { alert("请选择分摊人"); return; }
         trs += "<td>";
+        var shareUserList = "";
         for (var i = 0; i < shareUser.length; i++) {
+            var userid = $(shareUser[i]).attr("data-userid");
+            var username = $(shareUser[i]).attr("data-username");
+            var summoney = $("#SumSharedUserID" + userid).attr('sumAvgMoney');
+            var capMoney = summoney;
             if ($(shareUser[i]).prop("checked")) {
-                var userid = $(shareUser[i]).attr("data-userid");
-                var username = $(shareUser[i]).attr("data-username");
-                trs += "<input type='hidden' name='shareId' value='" + userid + "'/>" + username;
+                capMoney = (parseFloat(summoney) + avg).toFixed(2);
+                shareUserList += userid + ",";
+                trs += "<input type='hidden' name='shareId' value='" + userid + "' avgMoney='" + avg.toFixed(2) + "'/>" + username + "(" + avg.toFixed(2) + ")";
+            } else {
+                trs += "<input type='hidden' name='shareId' value='" + userid + "' avgMoney='0.00'/>" + username + "(" + 0.00 + ")";
             }
+            $("#labSumSharedUserID" + userid).html("(" + capMoney + ")");
+            $("#SumSharedUserID" + userid).attr('sumAvgMoney', capMoney);
+            avgprice += userid + "_" + capMoney + ";";
         }
+        shareUserList = shareUserList.substring(0, shareUserList.length - 1);
         trs += "</td>";
         trs += "</tr>";
         $("#listCost >tbody").append(trs);
+        if (UploadPriceWithUserIDDate == '') {
+            $("#UploadPriceWithUserIDDate").val(curruplod + "_" + shareUserList);
+        } else {
+            $("#UploadPriceWithUserIDDate").val(UploadPriceWithUserIDDate + ";" + curruplod + "_" + shareUserList);
+        }
+        $("#AvgPriceWithUser").val(avgprice.substring(0, avgprice.length - 1));
     }
 </script>

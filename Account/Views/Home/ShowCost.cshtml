@@ -1,0 +1,99 @@
+﻿@model List<ShowReporter>
+@{
+    var i = 1;
+}
+<div class="row">
+    <div class="col-sm-10 col-md-10">
+        <form action="#" name="getForm" method="get" class="form-inline">
+            <label class="control-label">开始时间</label><input id="dateStart" name="dateStart" value="@ViewBag.dateStart" class="form-control" />~
+            <label class="control-label">结束时间</label><input id="dateEnd" name="dateEnd" value="@ViewBag.dateEnd" class="form-control" />
+            <input type="submit" class="btn btn-primary pull-right" value="查询" />
+        </form>
+    </div>
+    <div class="col-sm-2 col-md-2">
+        <form action="#" name="postForm" method="post" class="form-inline">
+            <input id="hdateStart" name="hdateStart" type="hidden" value="@ViewBag.dateStart" />
+            <input id="hdateEnd" name="hdateEnd" type="hidden" value="@ViewBag.dateEnd" />
+            <button class="btn btn-primary pull-right">提交</button>
+        </form>
+    </div>
+</div>
+<div class="row">
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered" id="listCost">
+            <thead>
+                <tr>
+                    <td>#</td>
+                    <td>时间</td>
+                    <td>姓名</td>
+                    <td>花费(元)</td>
+                    <td>状态</td>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (ShowReporter r in Model)
+                {
+                    <tr>
+                        <td>@(ViewBag.CurrPage * 10 + i++)</td>
+                        <td>@r.CurrDate.ToString("yyyy-MM-dd")</td>
+                        <td>@r.Name</td>
+                        <td>@r.AvgCost</td>
+                        <td>@r.TypeName</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <nav class="pull-right">
+            @{
+                int RowCount = Convert.ToInt32(ViewBag.RowCount);//查出来的行数
+                int PageCount = Math.Ceiling(RowCount / 10.0).ToString().StringConvert<int>();//页数
+                string precss = "",nextcss="";
+                if (ViewBag.CurrPage == 0)
+                {
+                    precss = "disabled";
+                }
+                else if(ViewBag.CurrPage==PageCount-1)
+                {
+                    nextcss = "disabled";
+                }
+            }
+            <ul class="pagination" style="margin:0px">
+                <li class="@precss">
+                    <a href="@Url.Action("ShowCost","Home",new { dateStart=ViewBag.dateStart, dateEnd= ViewBag.dateEnd, pageindex=(ViewBag.CurrPage-1>0?ViewBag.CurrPage-1:0) })" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                @if (PageCount > 5)//大于5中间就显示...
+                {
+                    <li><a href="#">..</a></li>
+
+                    for (int j = 0; j < PageCount; j++)
+                    {
+
+                    }
+                    <li><a href="#">..</a></li>
+
+                }
+                else
+                {
+                    for (int j = 0; j < PageCount; j++)
+                    {
+                        if (ViewBag.CurrPage == j)
+                        {
+                            <li class="active"><a href="@Url.Action("ShowCost", "Home", new { dateStart = ViewBag.dateStart, dateEnd = ViewBag.dateEnd, pageindex=j })">@(j + 1)</a></li>
+                        }
+                        else
+                        {
+                            <li><a class="" href="@Url.Action("ShowCost", "Home", new { dateStart = ViewBag.dateStart, dateEnd = ViewBag.dateEnd, pageindex=j })">@(j + 1)</a></li>
+                        }
+                    }
+                }
+                <li class="@nextcss">
+                    <a href="@Url.Action("ShowCost","Home",new { dateStart=ViewBag.dateStart, dateEnd= ViewBag.dateEnd, pageindex= (ViewBag.CurrPage< PageCount-1 ? ViewBag.CurrPage+1 : PageCount-1) })" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>

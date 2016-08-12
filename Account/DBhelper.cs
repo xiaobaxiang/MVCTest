@@ -14,7 +14,7 @@ namespace Account
 {
     public class DBhelper
     {
-        protected readonly static string ConnectStr = "Data Source=.;Initial Catalog=Account;Integrated Security=True;Connect Timeout=15;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
+        protected readonly static string ConnectStr = "Data Source=.;Initial Catalog=Account;Integrated Security=False;User ID=sa;Password=sa;Connect Timeout=15;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
 
         public int ExecuteResult(string sqlstr, params SqlParameter[] parameters)
         {
@@ -87,10 +87,11 @@ namespace Account
             return null;
         }
 
-        public DataSet Pagination(string sqlstr, out int RowCount, int PageIndex = 0, int PageSize = 10, params SqlParameter[] parameters)
+        public DataSet Pagination(string sqlstrselect, string sqlstrfrom, string sqlstrwhere
+            , out int RowCount, int PageIndex = 0, int PageSize = 10, params SqlParameter[] parameters)
         {
             RowCount = 0;
-            if (string.IsNullOrWhiteSpace(sqlstr))
+            if (string.IsNullOrWhiteSpace(sqlstrselect) || string.IsNullOrWhiteSpace(sqlstrfrom))
                 return null;
             if (PageIndex < 0) PageIndex = 0;
             if (PageSize < 0) PageSize = 10;
@@ -104,7 +105,6 @@ namespace Account
                     }
                     using (SqlCommand sqlcmd = sqlcon.CreateCommand())
                     {
-                        sqlcmd.CommandText = sqlstr;
                         if (parameters != null) { sqlcmd.Parameters.AddRange(parameters); }
 
                         if (sqlcmd.Parameters.Contains("@PageIndex") || sqlcmd.Parameters.Contains("@PageSize") || sqlcmd.Parameters.Contains("@RowCount"))
@@ -117,15 +117,26 @@ namespace Account
                             pageindex.Value = PageIndex;
                             sqlcmd.Parameters.Add(pageindex);
                             SqlParameter pagesize = new SqlParameter("@PageSize", SqlDbType.Int, 4);
-                            pageindex.Value = PageSize;
-                            sqlcmd.Parameters.Add(pageindex);
+                            pagesize.Value = PageSize;
+                            sqlcmd.Parameters.Add(pagesize);
                             SqlParameter rowcount = new SqlParameter("@RowCount", SqlDbType.Int, 4);
+                            rowcount.Value = RowCount;
                             rowcount.Direction = ParameterDirection.Output;
-                            sqlstr = "SELECT ROW_NUMBER() OVER(ORDER BY @@IDENTITY) AS rownum,* INTO ##PAGATION FROM( " + sqlstr;
-                            sqlstr += " ) temp";
-                            sqlstr += "SELECT @RowCount=COUNT(*) FROM ##PAGATION";
-                            sqlstr += "SELECT * FROM ##PAGATION WHERE rownum > @PageIndex*@PageSize AND rownum<(@PageIndex+1)*@PageSize-1";
-                            sqlstr += "DROP TABLE ##PAGATION";
+                            sqlcmd.Parameters.Add(rowcount);
+                            string sqlstr = "SELECT " + sqlstrselect + " INTO ##PAGATION\n";
+                            sqlstr += " FROM " + sqlstrfrom + "\n";
+                            sqlstr += " WHERE " + sqlstrwhere + "\n";
+                            sqlstr += "SELECT @RowCount=COUNT(*) FROM ##PAGATION\n";
+                            sqlstr += "IF @PageIndex<0\n";
+                            sqlstr += "SET @PageIndex = 0\n";//保证合法性，小于0默认设置0
+                            sqlstr += "IF @PageSize<0\n";
+                            sqlstr += "SET @PageSize = 10\n";//保证合法性，小于0默认设置10
+                            sqlstr += "IF (@PageIndex+1)*@PageSize>@RowCount\n";
+                            sqlstr += "SET @PageIndex = @RowCount/@PageSize\n";//页索引如果过大，就设置为最后一页
+                            sqlstr += " SELECT * FROM ( SELECT ROW_NUMBER() OVER(ORDER BY @@IDENTITY) AS rownum,* FROM ##PAGATION  ) TEMP";
+                            sqlstr += " WHERE rownum >= @PageIndex*@PageSize+1 AND rownum<=(@PageIndex+1)*@PageSize;\n";
+                            sqlstr += " DROP TABLE ##PAGATION";
+                            sqlcmd.CommandText = sqlstr;
                             DataSet oDs = new DataSet();
                             SqlDataAdapter sda = new SqlDataAdapter(sqlcmd);
                             sda.Fill(oDs);
@@ -400,13 +411,33 @@ namespace Account
 
     public static class CommonExten
     {
-        public static T StringConvert<T>(this string str) where T:struct
+        public static T StringConvert<T>(this string str) where T : struct
         {
-            T obj = default(T);
+            T obj = default(T);//tryParse由于是带有out参数，使用了指针，目前无法直接getmethod找到
             Type type = typeof(T);
-            MethodInfo memberinfo= type.GetMethod("TryParse");
-            object o= memberinfo.Invoke(str,null);
-            bool b = (bool)o;
+            //MethodInfo memberinfo = type.GetMethod("Parse", new Type[] {str.GetType(),typeof(T)});
+            MethodInfo[] memberinfos = type.GetMethods();
+            MethodInfo tryParseInfo = null;
+            if (memberinfos == null) return obj;
+            //foreach(MethodInfo m in memberinfos)
+            //{
+            //    if (m.Name == "TryParse")
+            //    {
+            //        ParameterInfo[] p= m.GetParameters();
+            //       if( p.Length==2&&p[0].ParameterType==str.GetType())
+            //        tryParseInfo = m;
+            //        break;
+            //    }
+            //}
+            tryParseInfo = memberinfos.Where(e => {
+                return e.Name == "TryParse" && e.GetParameters().Length == 2 && e.GetParameters()[0].ParameterType == str.GetType();
+            }).SingleOrDefault();
+            if (tryParseInfo == null) { return obj;}
+            object[] objarr = new object[] { str,obj };
+            if(tryParseInfo.Invoke(null, objarr).ToString().Equals("True"))
+            {
+                return (T)objarr[1];
+            }
             return obj;
         }
 
@@ -423,9 +454,25 @@ namespace Account
             content += "异常消息:" + e.Message + "\r\n";
             content += "当前方法:" + e.TargetSite + "\r\n";
             content += "堆栈信息:" + e.StackTrace + "\r\n";
+            content += e.ToString() + "\r\n";
             content += "=============================================================\r\n\r\n";
             File.AppendAllText(filePath, content, Encoding.UTF8);
             return e;
+        }
+
+        public static DateTime getWeekOfMonday(this DateTime dtNow)
+        {
+            switch (dtNow.DayOfWeek)
+            {
+                case DayOfWeek.Monday: return dtNow;
+                case DayOfWeek.Tuesday: return dtNow.AddDays(-1);
+                case DayOfWeek.Wednesday: return dtNow.AddDays(-2);
+                case DayOfWeek.Thursday: return dtNow.AddDays(-3);
+                case DayOfWeek.Friday: return dtNow.AddDays(-4);
+                case DayOfWeek.Saturday: return dtNow.AddDays(-5);
+                case DayOfWeek.Sunday: return dtNow.AddDays(-6);
+                default: return getWeekOfMonday(DateTime.Now);
+            }
         }
     }
 }
