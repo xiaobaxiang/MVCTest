@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestCSharp", "TestCSharp\Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Account", "Account\Account.csproj", "{AC9B588E-81F9-45BB-BFFC-BA1D68DA94B7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestCSharp.Tests", "TestCSharp.Tests\TestCSharp.Tests.csproj", "{D6AA6CB1-C42E-4425-9422-9D83283EF8ED}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleSocketClient", "ConsoleSocketClient\ConsoleSocketClient.csproj", "{F7722D79-4157-48D9-B7D8-7C423FA847D7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +37,14 @@ Global
 		{AC9B588E-81F9-45BB-BFFC-BA1D68DA94B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AC9B588E-81F9-45BB-BFFC-BA1D68DA94B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AC9B588E-81F9-45BB-BFFC-BA1D68DA94B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6AA6CB1-C42E-4425-9422-9D83283EF8ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6AA6CB1-C42E-4425-9422-9D83283EF8ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6AA6CB1-C42E-4425-9422-9D83283EF8ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6AA6CB1-C42E-4425-9422-9D83283EF8ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7722D79-4157-48D9-B7D8-7C423FA847D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7722D79-4157-48D9-B7D8-7C423FA847D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7722D79-4157-48D9-B7D8-7C423FA847D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7722D79-4157-48D9-B7D8-7C423FA847D7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

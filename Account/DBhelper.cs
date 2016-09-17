@@ -14,8 +14,9 @@ namespace Account
 {
     public class DBhelper
     {
-        protected readonly static string ConnectStr = "Data Source=.;Initial Catalog=Account;Integrated Security=False;User ID=sa;Password=sa;Connect Timeout=15;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
+        //protected readonly static string ConnectStr = "Data Source=.;Initial Catalog=Account;Integrated Security=False;User ID=sa;Password=sa;Connect Timeout=15;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
 
+        protected readonly static string ConnectStr = "Data Source=192.168.1.107;Initial Catalog=Account;Integrated Security=False;User ID=sa;Password=sa;Connect Timeout=15;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
         public int ExecuteResult(string sqlstr, params SqlParameter[] parameters)
         {
             if (string.IsNullOrWhiteSpace(sqlstr))
@@ -38,7 +39,7 @@ namespace Account
                 }
                 catch (Exception e)
                 {
-                    e.logError();
+                    e.LogError();
                 }
                 finally
                 {
@@ -75,7 +76,7 @@ namespace Account
                 }
                 catch (Exception e)
                 {
-                    e.logError();
+                    e.LogError();
                 }
                 finally
                 {
@@ -87,14 +88,14 @@ namespace Account
             return null;
         }
 
-        public DataSet Pagination(string sqlstrselect, string sqlstrfrom, string sqlstrwhere
-            , out int RowCount, int PageIndex = 0, int PageSize = 10, params SqlParameter[] parameters)
+        public DataSet Pagination(string sqlstrselect, string sqlstrfrom, string sqlstrwhere,string sqlorderby
+            , out int rowCount, int pageIndex = 0, int pageSize = 10, params SqlParameter[] parameters)
         {
-            RowCount = 0;
+            rowCount = 0;
             if (string.IsNullOrWhiteSpace(sqlstrselect) || string.IsNullOrWhiteSpace(sqlstrfrom))
                 return null;
-            if (PageIndex < 0) PageIndex = 0;
-            if (PageSize < 0) PageSize = 10;
+            if (pageIndex < 0) pageIndex = 0;
+            if (pageSize < 0) pageSize = 10;
             using (SqlConnection sqlcon = new SqlConnection(ConnectStr))
             {
                 try
@@ -114,18 +115,21 @@ namespace Account
                         else
                         {
                             SqlParameter pageindex = new SqlParameter("@PageIndex", SqlDbType.Int, 4);
-                            pageindex.Value = PageIndex;
+                            pageindex.Value = pageIndex;
                             sqlcmd.Parameters.Add(pageindex);
                             SqlParameter pagesize = new SqlParameter("@PageSize", SqlDbType.Int, 4);
-                            pagesize.Value = PageSize;
+                            pagesize.Value = pageSize;
                             sqlcmd.Parameters.Add(pagesize);
                             SqlParameter rowcount = new SqlParameter("@RowCount", SqlDbType.Int, 4);
-                            rowcount.Value = RowCount;
+                            rowcount.Value = rowCount;
                             rowcount.Direction = ParameterDirection.Output;
                             sqlcmd.Parameters.Add(rowcount);
-                            string sqlstr = "SELECT " + sqlstrselect + " INTO ##PAGATION\n";
+                            string sqlstr = "SELECT * INTO ##PAGATION FROM (SELECT TOP 1000000000 " + sqlstrselect + "\n";
                             sqlstr += " FROM " + sqlstrfrom + "\n";
                             sqlstr += " WHERE " + sqlstrwhere + "\n";
+                            if (!string.IsNullOrWhiteSpace((sqlorderby)))
+                                sqlstr += " order by " + sqlorderby;
+                            sqlstr += ") AS TEMP\n";
                             sqlstr += "SELECT @RowCount=COUNT(*) FROM ##PAGATION\n";
                             sqlstr += "IF @PageIndex<0\n";
                             sqlstr += "SET @PageIndex = 0\n";//保证合法性，小于0默认设置0
@@ -133,16 +137,16 @@ namespace Account
                             sqlstr += "SET @PageSize = 10\n";//保证合法性，小于0默认设置10
                             sqlstr += "IF (@PageIndex+1)*@PageSize>@RowCount\n";
                             sqlstr += "SET @PageIndex = @RowCount/@PageSize\n";//页索引如果过大，就设置为最后一页
-                            sqlstr += " SELECT * FROM ( SELECT ROW_NUMBER() OVER(ORDER BY @@IDENTITY) AS rownum,* FROM ##PAGATION  ) TEMP";
-                            sqlstr += " WHERE rownum >= @PageIndex*@PageSize+1 AND rownum<=(@PageIndex+1)*@PageSize;\n";
+                            sqlstr +=" SELECT * FROM ( SELECT ROW_NUMBER() OVER(ORDER BY @@IDENTITY) AS rownum,* FROM ##PAGATION ) TEMP";
+                            sqlstr += " WHERE rownum >= @PageIndex*@PageSize+1 AND rownum<=(@PageIndex+1)*@PageSize\n";
                             sqlstr += " DROP TABLE ##PAGATION";
                             sqlcmd.CommandText = sqlstr;
                             DataSet oDs = new DataSet();
                             SqlDataAdapter sda = new SqlDataAdapter(sqlcmd);
                             sda.Fill(oDs);
-                            if (!int.TryParse(rowcount.Value.ToString(), out RowCount))
+                            if (!int.TryParse(rowcount.Value.ToString(), out rowCount))
                             {
-                                RowCount = 0;
+                                rowCount = 0;
                                 return null;
                             }
                             return oDs;
@@ -151,7 +155,7 @@ namespace Account
                 }
                 catch (Exception e)
                 {
-                    e.logError();
+                    e.LogError();
                 }
                 finally
                 {
@@ -169,7 +173,7 @@ namespace Account
         /// <summary>    
         /// 将一个IEmnumberable集合转化一个DataTable
         /// </summary>    
-        /// <typeparamname="T">每个实体的泛型</typeparam>    
+        /// <param name="T">每个实体的泛型</param>
         /// <param name="list">待转换元素集合</param>    
         /// <returns></returns>    
         public static DataTable ToDataTable<T>(this IEnumerable<T> list)
@@ -182,7 +186,7 @@ namespace Account
                 Type type = typeof(T);
                 DataTable dt = new DataTable();
                 //把所有的public属性加入到集合 并添加DataTable的列    
-                Array.ForEach<PropertyInfo>(type.GetProperties()
+                Array.ForEach(type.GetProperties()
                 , p =>
                 {
                     pList.Add(p);
@@ -204,37 +208,37 @@ namespace Account
 
         /// <summary>    
         /// DataTable 转换为List 集合    
-        /// </summary>    
-        /// <typeparam name="TResult">类型</typeparam>    
+        /// </summary>
         /// <param name="dt">DataTable</param>    
         /// <returns></returns>    
-        public static List<T> ToList<T>(this DataTable dt) where T : class, new()
-        {
-            //创建一个属性的列表    
-            List<PropertyInfo> prlist = new List<PropertyInfo>();
+        //public static List<T> ToList<T>(this DataTable dt) where T : class, new()
+        //{
+        //    //创建一个属性的列表    
+        //    //List<PropertyInfo> prlist = new List<PropertyInfo>();
 
-            //获取TResult的类型实例  反射的入口    
-            Type t = typeof(T);
-            //获得TResult 的所有的Public 属性 并找出TResult属性和DataTable的列名称相同的属性(PropertyInfo) 并加入到属性列表     
-            Array.ForEach<PropertyInfo>(t.GetProperties(), p =>
-            {
-                if (dt.Columns.IndexOf(p.Name) != -1) prlist.Add(p);
-            });
+        //    //获取TResult的类型实例  反射的入口    
+        //    Type t = typeof(T);
+        //    //获得TResult 的所有的Public 属性 并找出TResult属性和DataTable的列名称相同的属性(PropertyInfo) 并加入到属性列表     
+        //    //Array.ForEach<PropertyInfo>(t.GetProperties(), p =>
+        //    //{
+        //    //    if (dt.Columns.IndexOf(p.Name) != -1) prlist.Add(p);
+        //    //});
 
-            //创建返回的集合 
-            List<T> oblist = new List<T>();
-            foreach (DataRow row in dt.Rows)
-            {
-                //创建TResult的实例    
-                T ob = new T();
-                //找到对应的数据  并赋值    
-                //prlist.ForEach(p => { if (row[p.Name] != DBNull.Value) p.SetValue(ob, row[p.Name], null); });
+        //    //创建返回的集合 
+        //    List<T> oblist = new List<T>();
+        //    foreach (DataRow row in dt.Rows)
+        //    {
+        //        //创建TResult的实例    
+        //        T ob = new T();
+        //        //找到对应的数据  并赋值    
+        //        //prlist.ForEach(p => { if (row[p.Name] != DBNull.Value) p.SetValue(ob, row[p.Name], null); });
 
-                //放入到返回的集合中.    
-                oblist.Add(ob);
-            }
-            return oblist;
-        }
+        //        //放入到返回的集合中.    
+        //        oblist.Add(ob);
+        //    }
+        //    return oblist;
+        //}
+
         /// <summary>    
         /// 将集合类转换成DataTable    
         /// </summary>    
@@ -273,7 +277,7 @@ namespace Account
         /// <returns>数据集(表)</returns>    
         public static DataTable ToDataTable<T>(IList<T> list)
         {
-            return ToDataTable<T>(list, null);
+            return ToDataTable(list, null);
         }
 
         /// <summary>    
@@ -347,11 +351,11 @@ namespace Account
         /// <returns></returns>
         public static IEnumerable<T> ForeachOne<T>(this IEnumerable<T> eles, Action<T> act)
         {
-            if (act != null)
-                foreach (T e in eles)
-                {
-                    act(e);
-                }
+            if (act == null) return eles; //返回原操作对象
+            foreach (T e in eles)
+            {
+                act(e);
+            }
             return eles;//返回原操作对象
         }
     }
@@ -384,7 +388,7 @@ namespace Account
                         if (dr[j].Equals(DBNull.Value))
                         {
                             if (e.PropertyType.IsValueType)
-                                ores = default(int);
+                                ores = default(ValueType);
                             //switch (e.PropertyType.Name)//针对数据库中DBNull类型数值类型就0，引用就null,下面可能没有考虑完全，可以自己在添加上
                             //{
                             //    case "int":
@@ -441,7 +445,7 @@ namespace Account
             return obj;
         }
 
-        public static Exception logError(this Exception e)
+        public static Exception LogError(this Exception e)
         {
             string fullpath = AppDomain.CurrentDomain.BaseDirectory + "Error";
             if (!Directory.Exists(fullpath)) { Directory.CreateDirectory(fullpath); }
@@ -460,7 +464,7 @@ namespace Account
             return e;
         }
 
-        public static DateTime getWeekOfMonday(this DateTime dtNow)
+        public static DateTime GetWeekOfMonday(this DateTime dtNow)
         {
             switch (dtNow.DayOfWeek)
             {
@@ -471,8 +475,14 @@ namespace Account
                 case DayOfWeek.Friday: return dtNow.AddDays(-4);
                 case DayOfWeek.Saturday: return dtNow.AddDays(-5);
                 case DayOfWeek.Sunday: return dtNow.AddDays(-6);
-                default: return getWeekOfMonday(DateTime.Now);
+                default: return GetWeekOfMonday(DateTime.Now);
             }
+        }
+
+        public static string sss(this string s, Func<bool> b)
+        {
+            b();
+            return "123";
         }
     }
 }

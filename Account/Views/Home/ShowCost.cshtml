@@ -1,12 +1,13 @@
 ﻿@model List<ShowReporter>
 @{
     var i = 1;
+    var j = 1;
 }
 <div class="row">
     <div class="col-sm-10 col-md-10">
         <form action="#" name="getForm" method="get" class="form-inline">
-            <label class="control-label">开始时间</label><input id="dateStart" name="dateStart" value="@ViewBag.dateStart" class="form-control" />~
-            <label class="control-label">结束时间</label><input id="dateEnd" name="dateEnd" value="@ViewBag.dateEnd" class="form-control" />
+            <label class="control-label">开始时间</label><input id="dateStart" name="dateStart" value="@ViewBag.dateStart" class="form-control" onfocus="WdatePicker()" />~
+            <label class="control-label">结束时间</label><input id="dateEnd" name="dateEnd" value="@ViewBag.dateEnd" class="form-control" onfocus="WdatePicker()" />
             <input type="submit" class="btn btn-primary pull-right" value="查询" />
         </form>
     </div>
@@ -16,6 +17,14 @@
             <input id="hdateEnd" name="hdateEnd" type="hidden" value="@ViewBag.dateEnd" />
             <button class="btn btn-primary pull-right">提交</button>
         </form>
+    </div>
+</div>
+<div class="row">
+    <div class="col-sm-12 col-md-12">
+        @foreach (SumCost sc in ViewBag.UserCost)
+        {
+            @Html.Raw("<span>" + sc.UserName + ":" + sc.PayMoney + "-" + sc.CostSumMoney + "</span>")
+        }
     </div>
 </div>
 <div class="row">
@@ -32,7 +41,7 @@
             </thead>
             <tbody>
                 @foreach (ShowReporter r in Model)
-                {
+            {
                     <tr>
                         <td>@(ViewBag.CurrPage * 10 + i++)</td>
                         <td>@r.CurrDate.ToString("yyyy-MM-dd")</td>
@@ -45,29 +54,29 @@
         </table>
         <nav class="pull-right">
             @{
-                int RowCount = Convert.ToInt32(ViewBag.RowCount);//查出来的行数
-                int PageCount = Math.Ceiling(RowCount / 10.0).ToString().StringConvert<int>();//页数
-                string precss = "",nextcss="";
+                int RowCount = Convert.ToInt32(ViewBag.RowCount); //查出来的行数
+                int PageCount = Math.Ceiling(RowCount / 10.0).ToString().StringConvert<int>(); //页数
+                string precss = "", nextcss = "";
                 if (ViewBag.CurrPage == 0)
                 {
                     precss = "disabled";
                 }
-                else if(ViewBag.CurrPage==PageCount-1)
+                else if (ViewBag.CurrPage == PageCount - 1)
                 {
                     nextcss = "disabled";
                 }
             }
-            <ul class="pagination" style="margin:0px">
+            <ul class="pagination" style="margin: 0px">
                 <li class="@precss">
-                    <a href="@Url.Action("ShowCost","Home",new { dateStart=ViewBag.dateStart, dateEnd= ViewBag.dateEnd, pageindex=(ViewBag.CurrPage-1>0?ViewBag.CurrPage-1:0) })" aria-label="Previous">
+                    <a href="@Url.Action("ShowCost", "Home", new {dateStart = ViewBag.dateStart, dateEnd = ViewBag.dateEnd, pageindex = (ViewBag.CurrPage - 1 > 0 ? ViewBag.CurrPage - 1 : 0)})" aria-label="Previous">
                         <span aria-hidden="true">&laquo;</span>
                     </a>
                 </li>
-                @if (PageCount > 5)//大于5中间就显示...
+                @if (PageCount > 5) //大于5中间就显示...
                 {
                     <li><a href="#">..</a></li>
 
-                    for (int j = 0; j < PageCount; j++)
+                    for (j = 0; j < PageCount; j++)
                     {
 
                     }
@@ -76,24 +85,50 @@
                 }
                 else
                 {
-                    for (int j = 0; j < PageCount; j++)
+                    for (j = 0; j < PageCount; j++)
                     {
                         if (ViewBag.CurrPage == j)
                         {
-                            <li class="active"><a href="@Url.Action("ShowCost", "Home", new { dateStart = ViewBag.dateStart, dateEnd = ViewBag.dateEnd, pageindex=j })">@(j + 1)</a></li>
+                            <li class="active"><a href="@Url.Action("ShowCost", "Home", new {dateStart = ViewBag.dateStart, dateEnd = ViewBag.dateEnd, pageindex = j})">@(j + 1)</a></li>
                         }
                         else
                         {
-                            <li><a class="" href="@Url.Action("ShowCost", "Home", new { dateStart = ViewBag.dateStart, dateEnd = ViewBag.dateEnd, pageindex=j })">@(j + 1)</a></li>
+                            <li><a class="" href="@Url.Action("ShowCost", "Home", new {dateStart = ViewBag.dateStart, dateEnd = ViewBag.dateEnd, pageindex = j})">@(j + 1)</a></li>
                         }
                     }
                 }
                 <li class="@nextcss">
-                    <a href="@Url.Action("ShowCost","Home",new { dateStart=ViewBag.dateStart, dateEnd= ViewBag.dateEnd, pageindex= (ViewBag.CurrPage< PageCount-1 ? ViewBag.CurrPage+1 : PageCount-1) })" aria-label="Next">
+                    <a href="@Url.Action("ShowCost", "Home", new {dateStart = ViewBag.dateStart, dateEnd = ViewBag.dateEnd, pageindex = (ViewBag.CurrPage < PageCount - 1 ? ViewBag.CurrPage + 1 : PageCount - 1)})" aria-label="Next">
                         <span aria-hidden="true">&raquo;</span>
                     </a>
                 </li>
             </ul>
         </nav>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered" id="listPay">
+            <thead>
+                <tr>
+                    <td>#</td>
+                    <td>时间</td>
+                    <td>姓名</td>
+                    <td>类型</td>
+                    <td>付费(元)</td>
+                </tr>
+            </thead>
+            <tbody>
+            @{ j = 1;}
+            @foreach (ShowPay p in ViewBag.UserPay)
+            {
+                <tr>
+                    <td>@(j++)</td>
+                    <td>@p.CurrDate.ToString("yyyy-MM-dd")</td>
+                    <td>@p.Name</td>
+                    <td>@p.TypeName</td>
+                    <td>@p.PayMoney</td>
+                </tr>
+            }
+            </tbody>
+        </table>
     </div>
 </div>

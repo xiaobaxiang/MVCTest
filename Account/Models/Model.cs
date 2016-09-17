@@ -57,12 +57,12 @@ namespace Account
             get { return _currDate; }
             set { _currDate = value; }
         }
-        private decimal _costMoney;
+        private decimal _payMoney;
 
-        public decimal CostMoney
+        public decimal PayMoney
         {
-            get { return _costMoney; }
-            set { _costMoney = value; }
+            get { return _payMoney; }
+            set { _payMoney = value; }
         }
         private int _typeID;
 
@@ -85,6 +85,34 @@ namespace Account
         {
             get { return _shareuserid; }
             set { _shareuserid = value; }
+        }
+    }
+
+    public class SumCost
+    {
+        private decimal _costSumMoney;
+
+        public decimal CostSumMoney
+        {
+            get { return _costSumMoney; }
+            set { _costSumMoney = value; }
+        }
+
+        private string _userName;
+        public string UserName
+        {
+            get { return _userName; }
+            set { _userName = value; }
+        }
+
+        /// <summary>
+        /// Pay
+        /// </summary>		
+        private decimal _paymoney;
+        public decimal PayMoney
+        {
+            get { return _paymoney; }
+            set { _paymoney = value; }
         }
     }
 
@@ -198,6 +226,7 @@ namespace Account
             get { return _avgcost; }
             set { _avgcost = value; }
         }
+
         /// <summary>
         /// Flag
         /// </summary>		
@@ -266,6 +295,65 @@ namespace Account
         {
             get { return _parentid; }
             set { _parentid = value; }
+        }
+    }
+
+    public class ShowPay
+    {
+        /// <summary>
+        /// UserID
+        /// </summary>		
+        private int _userid;
+        public int UserID
+        {
+            get { return _userid; }
+            set { _userid = value; }
+        }
+        /// <summary>
+        /// CurrDate
+        /// </summary>		
+        private DateTime _currdate;
+        public DateTime CurrDate
+        {
+            get { return _currdate; }
+            set { _currdate = value; }
+        }
+
+        /// <summary>
+        /// Name
+        /// </summary>		
+        private string _name;
+        public string Name
+        {
+            get { return _name; }
+            set { _name = value; }
+        }
+
+        /// <summary>
+        /// ModelName
+        /// </summary>		
+        private string _modelname;
+        public string ModelName
+        {
+            get { return _modelname; }
+            set { _modelname = value; }
+        }
+        /// <summary>
+        /// TypeName
+        /// </summary>		
+        private string _typename;
+        public string TypeName
+        {
+            get { return _typename; }
+            set { _typename = value; }
+        }
+
+        private decimal _payMoney;
+
+        public decimal PayMoney
+        {
+            get { return _payMoney; }
+            set { _payMoney = value; }
         }
     }
 }

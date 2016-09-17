@@ -55,7 +55,7 @@ namespace Account.Controllers
             if (oDS.Tables[0].Rows.Count > 0)//已经存在记录
             {
                 sqlstr = "delete from Cost where CurrDate='" + payDate + "'";
-               int Result = dbh.ExecuteResult(sqlstr);
+                int Result = dbh.ExecuteResult(sqlstr);
             }
             string[] UserModel = UploadPriceWithUserIDDate.Split(';');
             DateTime dtnow = DateTime.Now;
@@ -72,12 +72,12 @@ namespace Account.Controllers
                 //if (!DateTime.TryParse(cell[2], out currDate)) { continue; }//当天
                 //if (!decimal.TryParse(cell[3], out Cost)) { continue; }//花费
 
-                sqlstr = "insert into Cost values(@UserID,@CurrDate,@CostMoney,@TypeID,@AddDate,@ShareUserID)";
+                sqlstr = "insert into Cost values(@UserID,@CurrDate,@PayMoney,@TypeID,@AddDate,@ShareUserID)";
                 SqlParameter[] sqlparams =
                 {
                     new SqlParameter("@UserID",SqlDbType.Int,32),
                     new SqlParameter("@CurrDate",SqlDbType.DateTime),
-                    new SqlParameter("@CostMoney",SqlDbType.Decimal),
+                    new SqlParameter("@PayMoney",SqlDbType.Decimal),
                     new SqlParameter("@TypeID",SqlDbType.Int,32),
                     new SqlParameter("@AddDate",SqlDbType.DateTime),
                     new SqlParameter("@ShareUserID",SqlDbType.VarChar,50)
@@ -92,7 +92,7 @@ namespace Account.Controllers
             }
             sqlstr = "select * from UserInfo where StatusNO='A'";
             oDS = dbh.ExecuteQuery(sqlstr);
-            string[] ShareUserMOdels = AvgPriceWithUser.Split(';');
+            string[] shareUserMOdels = AvgPriceWithUser.Split(';');
             List<UserInfo> lisu = oDS.Tables[0].TabeToList<UserInfo>().ToList();
             Dictionary<int, Reporter> diccost = new Dictionary<int, Reporter>();
             lisu.ForEach(e =>
@@ -105,15 +105,15 @@ namespace Account.Controllers
                 r.AddDate = dtnow;
                 diccost.Add(e.Id, r);
             });
-            foreach (string shareModel in ShareUserMOdels)
+            foreach (string shareModel in shareUserMOdels)
             {
                 string[] cell = shareModel.Split('_');
                 if (cell.Length < 2) { continue; }
-                int UserID = cell[0].StringConvert<int>();
+                int userId = cell[0].StringConvert<int>();
                 decimal avg = cell[1].StringConvert<decimal>();
                 //if (!int.TryParse(cell[0], out UserID)) { continue; }//人
                 //if (!decimal.TryParse(cell[1], out avg)) { continue; }//均摊
-                Reporter r = diccost[UserID];
+                Reporter r = diccost[userId];
                 if (r == null) { continue; }
                 r.AvgCost = avg;
             }
@@ -145,8 +145,8 @@ namespace Account.Controllers
         {
             if (dateStart.Equals("") || dateEnd.Equals(""))
             {
-                dateStart = DateTime.Now.getWeekOfMonday().ToString("yyyy-MM-dd");
-                dateEnd = DateTime.Now.getWeekOfMonday().AddDays(6).ToString("yyyy-MM-dd");
+                dateStart = DateTime.Now.GetWeekOfMonday().ToString("yyyy-MM-dd");
+                dateEnd = DateTime.Now.GetWeekOfMonday().AddDays(6).ToString("yyyy-MM-dd");
             }
             ViewBag.dateStart = dateStart;
             ViewBag.dateEnd = dateEnd;
@@ -156,21 +156,49 @@ namespace Account.Controllers
             string sqlstrfrom = @"Reporter a
                             left join UserInfo b on a.UserID=b.ID
                             left join TypeInfo c on a.Flag=c.NO and c.ModelName='Reporter'";
-            string sqlstrwhere = "a.CurrDate between @dateStart and @dateEnd order by [CurrDate]";
+            string sqlstrwhere = "a.CurrDate between @dateStart and @dateEnd";
 
             SqlParameter[] spm =
             {
                 new SqlParameter("@dateStart",SqlDbType.DateTime),
                 new SqlParameter("@dateEnd",SqlDbType.DateTime)
             };
-            spm[0].Value = dateStart;
-            spm[1].Value = dateEnd;
+            spm[0].Value = dateStart + " 00:00:00";
+            spm[1].Value = dateEnd + " 23:59:59";
             //DataSet oDS = dbh.ExecuteQuery(sqlstr, spm);
             int rowcount = 0;
-            DataSet oDS = dbh.Pagination(sqlstrselect,sqlstrfrom,sqlstrwhere, out rowcount, pageindex, pagesize, spm);
+            DataSet oDS = dbh.Pagination(sqlstrselect, sqlstrfrom, sqlstrwhere, "CurrDate ASC", out rowcount, pageindex, pagesize, spm);
             List<ShowReporter> lisr = oDS.Tables[0].TabeToList<ShowReporter>().ToList();
             ViewBag.RowCount = rowcount;
             ViewBag.CurrPage = pageindex;
+            string sql = "select a.Name as UserName,b.CostSumMoney,c.PayMoney from UserInfo a left join (";
+            sql += " select UserID,sum(AvgCost) CostSumMoney from Reporter where CurrDate between @dateStart and @dateEnd group by UserID ) b on a.ID=b.UserID";
+            sql += " left join  (select UserID,sum(PayMoney) PayMoney from Cost where CurrDate between @dateStart and @dateEnd group by UserID) c on a.ID=c.UserID";
+
+            SqlParameter[] spm1 =
+            {
+                new SqlParameter("@dateStart",SqlDbType.DateTime),
+                new SqlParameter("@dateEnd",SqlDbType.DateTime)
+            };
+            spm1[0].Value = dateStart;
+            spm1[1].Value = dateEnd;
+            List<SumCost> lssc = dbh.ExecuteQuery(sql, spm1).Tables[0].TabeToList<SumCost>().ToList();
+            ViewBag.UserCost = lssc;
+
+            sql = "select a.UserID,a.CurrDate,c.Name,b.ModelName,b.TypeName,a.PayMoney from Cost a left join TypeInfo b on a.TypeID=b.ID and b.ModelName='Cost'";
+            sql += " left join UserInfo c on a.UserID=c.ID where a.CurrDate between @dateStart and @dateEnd order by CurrDate";
+            SqlParameter[] spm2 =
+            {
+                new SqlParameter("@dateStart",SqlDbType.DateTime),
+                new SqlParameter("@dateEnd",SqlDbType.DateTime)
+            };
+
+            //string aaa = "1233".sss(delegate() { return true; });
+            //string aaa = "1233".sss(() => true);
+            spm2[0].Value = dateStart;
+            spm2[1].Value = dateEnd;
+            List<ShowPay> lssp = dbh.ExecuteQuery(sql, spm2).Tables[0].TabeToList<ShowPay>().ToList();
+            ViewBag.UserPay = lssp;
             return View(lisr);
         }
 
@@ -178,9 +206,7 @@ namespace Account.Controllers
         public void ShowCost(string hdateStart = "", string hdateEnd = "", string flage = "F")
         {
             if (hdateStart.Equals("") || hdateEnd.Equals(""))
-            {
                 Response.Redirect(Url.Action("ShowCost", "Home"));
-            }
             string sqlstr = @"update Reporter set Flag = 'T'
                             where CurrDate between @dateStart and @dateEnd";
             SqlParameter[] spm =
@@ -188,8 +214,8 @@ namespace Account.Controllers
                 new SqlParameter("@dateStart",SqlDbType.DateTime),
                 new SqlParameter("@dateEnd",SqlDbType.DateTime)
             };
-            spm[0].Value = hdateStart;
-            spm[1].Value = hdateEnd+"23:59:59";
+            spm[0].Value = hdateStart + " 00:00:00";
+            spm[1].Value = hdateEnd + " 23:59:59";
             int nResutl = dbh.ExecuteResult(sqlstr, spm);
             Response.Redirect(Url.Action("ShowCost", "Home") + "?dateStart=" + hdateStart + "&dateEnd=" + hdateEnd);
         }

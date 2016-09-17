@@ -19,7 +19,7 @@ namespace Account
         protected void Application_Error(Object sender, EventArgs e)//会话中如果应用程序出现错误会执行这个
         {
             Exception lastError = Server.GetLastError();
-            lastError.logError();
+            lastError.LogError();
             Response.Redirect("~/Error.html");
         }
     }

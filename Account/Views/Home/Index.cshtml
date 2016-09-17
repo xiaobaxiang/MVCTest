@@ -74,7 +74,7 @@
             <div class="form-group" id="payUser">
                 <div class="input-group">
                     <div class="input-group-addon">时间</div>
-                    <input type="text" id="payDate" name="payDate" class="form-control" value="@DateTime.Now.ToString(" yyyy-MM-dd")" />
+                    <input type="text" id="payDate" name="payDate" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" onfocus="WdatePicker()" />
                 </div>
             </div>
         </div>
@@ -94,7 +94,7 @@
 </form>
 <script>
     function add() {
-        var UploadPriceWithUserIDDate = $("#UploadPriceWithUserIDDate").val();
+        var uploadPriceWithUserIdDate = $("#UploadPriceWithUserIDDate").val();
         var AvgPriceWithUser = $("#AvgPriceWithUser").val();
         var curruplod = "";
         var avgprice = "";
@@ -140,10 +140,10 @@
         trs += "</td>";
         trs += "</tr>";
         $("#listCost >tbody").append(trs);
-        if (UploadPriceWithUserIDDate == '') {
+        if (uploadPriceWithUserIdDate == '') {
             $("#UploadPriceWithUserIDDate").val(curruplod + "_" + shareUserList);
         } else {
-            $("#UploadPriceWithUserIDDate").val(UploadPriceWithUserIDDate + ";" + curruplod + "_" + shareUserList);
+            $("#UploadPriceWithUserIDDate").val(uploadPriceWithUserIdDate + ";" + curruplod + "_" + shareUserList);
         }
         $("#AvgPriceWithUser").val(avgprice.substring(0, avgprice.length - 1));
     }
