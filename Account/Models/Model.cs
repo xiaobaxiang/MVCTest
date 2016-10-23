@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Web;
 
@@ -20,6 +21,9 @@ namespace Account
         }
         private string _name;
 
+        [Display(Name = "姓名")]
+        [StringLength(maximumLength:10,ErrorMessage = "最大长度不超过10")]
+        [Required(AllowEmptyStrings = false,ErrorMessage = "姓名必填")]
         public string Name
         {
             get { return _name; }
@@ -27,6 +31,9 @@ namespace Account
         }
 
         private string _statusno;
+        [Display(Name = "状态")]
+        [StringLength(maximumLength:10, MinimumLength = 1, ErrorMessage="长度不超过10个字符")]
+        [Required(ErrorMessage = "状态必填")]
         public string StatusNO
         {
             get { return _statusno; }
@@ -208,6 +215,7 @@ namespace Account
             get { return _userid; }
             set { _userid = value; }
         }
+
         /// <summary>
         /// CurrDate
         /// </summary>		

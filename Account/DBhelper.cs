@@ -14,9 +14,10 @@ namespace Account
 {
     public class DBhelper
     {
-        //protected readonly static string ConnectStr = "Data Source=.;Initial Catalog=Account;Integrated Security=False;User ID=sa;Password=sa;Connect Timeout=15;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
+        //protected readonly static string ConnectStr = "Data Source=.;Initial Catalog=Account_Test;Integrated Security=False;User ID=sa;Password=sa;Connect Timeout=15;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
 
-        protected readonly static string ConnectStr = "Data Source=192.168.1.107;Initial Catalog=Account;Integrated Security=False;User ID=sa;Password=sa;Connect Timeout=15;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
+        protected readonly static string ConnectStr = "Data Source=.;Initial Catalog=Account;Integrated Security=False;User ID=sa;Password=sa;Connect Timeout=15;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
+
         public int ExecuteResult(string sqlstr, params SqlParameter[] parameters)
         {
             if (string.IsNullOrWhiteSpace(sqlstr))

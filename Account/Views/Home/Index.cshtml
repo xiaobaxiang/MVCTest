@@ -1,6 +1,7 @@
 ﻿@model List<UserInfo>
 @{
     ViewBag.Title = "记账";
+    int j = 0;
 }
 <h2>添加</h2>
 <form id="CostForm" method="post" action="#">
@@ -13,20 +14,65 @@
                     <td>姓名</td>
                     <td>类别</td>
                     <td>时间</td>
-                    <td>花费(元)</td>
+                    <td class="text-right">花费(元)</td>
                     <td>
-                        @foreach (UserInfo u in Model)
+                        @foreach (Reporter r in ViewBag.listReportInfo)
                         {
-                            <input type="hidden" id="SumSharedUserID@(u.Id)" name="SumSharedUserID@(u.Id)" data-userid="@(u.Id)" data-username="@(u.Name)" sumAvgMoney='0.00' />@(u.Name)<label id="labSumSharedUserID@(u.Id)">@("(0.00)")</label>
+                            <input type="hidden" id="SumSharedUserID@(r.UserID)" name="SumSharedUserID@(r.UserID)" data-userid="@r.UserID" data-username="@Model.Single(m=>m.Id==r.UserID).Name" sumAvgMoney='@r.AvgCost.ToString("###0.00")' />@Model.Single(m => m.Id == r.UserID).Name<label id="labSumSharedUserID@(r.UserID)">@("(" + r.AvgCost.ToString("###0.00") + ")")</label>
+                        }
+                        @if (((List<Reporter>)ViewBag.listReportInfo).Count == 0)
+                        {
+                            foreach (UserInfo u in Model)
+                            {
+                                <input type="hidden" id="SumSharedUserID@(u.Id)" name="SumSharedUserID@(u.Id)" data-userid="@u.Id" data-username="@u.Name" sumAvgMoney='0.00' />@u.Name<label id="labSumSharedUserID@(u.Id)">@("(0.00)")</label>
+                            }
                         }
                     </td>
+                    <td class="text-center">删除</td>
                 </tr>
             </thead>
-            <tbody></tbody>
+            <tbody>
+                @foreach (Cost c in ViewBag.listCostInfo)
+            {
+                    <tr>
+                        <td>@(++j)</td>
+                        <td>@Model.Single(m => m.Id == c.UserID).Name</td>
+                        <td>@((ViewBag.listTypeInfo as List<TypeInfo>).Single(t => t.Id == c.TypeID).TypeName)</td>
+                        <td>@c.CurrDate.ToString("yyyy-MM-dd")</td>
+                        <td class="text-right">@c.PayMoney</td>
+                        <td>
+                            @{
+                                string[] uidArr = c.ShareUserID.Split(',');
+                                decimal avgcost = c.PayMoney / uidArr.Length;
+                                foreach (UserInfo u in Model)
+                                {
+                                    if (uidArr.AsEnumerable().Contains(u.Id.ToString()))
+                                    {
+                                        <input type="hidden" name="SumSharedUserID@(u.Id)" data-userid="@(u.Id)" data-username="@(u.Name)" sumAvgMoney='@avgcost' />
+                                        @(u.Name)@("(" + avgcost.ToString("###0.00") + ")")
+                                    }
+                                    else
+                                    {
+                                        <input type="hidden" id="SumSharedUserID@(u.Id)" name="SumSharedUserID@(u.Id)" data-userid="@(u.Id)" data-username="@(u.Name)" sumAvgMoney='0.00' />
+                                        @(u.Name)@("(0.00)")
+                                    }
+                                }
+                            }
+                        </td>
+                        <td class="text-center"><button type='button' class='btn btn-sm btn-danger' onclick='deleteLine(this)'>删除</button></td>
+                    </tr>
+                                }
+            </tbody>
         </table>
     </div>
-    <input type="hidden" id="UploadPriceWithUserIDDate" name="UploadPriceWithUserIDDate" value="" />
-    <input type="hidden" id="AvgPriceWithUser" name="AvgPriceWithUser" value="" />
+
+
+    @{
+        string oldCostSum = string.Join(";", (ViewBag.listCostInfo as List<Cost>).Select(c => c.UserID + "_" + c.TypeID + "_" + c.CurrDate.ToString("yyyy-MM-dd") + "_" + c.PayMoney + "_" + c.ShareUserID));
+        string oldshare = string.Join(";", (ViewBag.listReportInfo as List<Reporter>).Select(r => r.UserID + "_" + r.AvgCost));
+    }
+    <input type="hidden" id="UploadPriceWithUserIDDate" name="UploadPriceWithUserIDDate" value="@oldCostSum" />
+    <input type="hidden" id="AvgPriceWithUser" name="AvgPriceWithUser" value="@oldshare" />
     <div class="row">
         <div class="col-sm-3 col-md-3">
             <div class="form-inline">
@@ -71,10 +117,13 @@
 
         </div>
         <div class="col-sm-3 col-md-3">
-            <div class="form-group" id="payUser">
-                <div class="input-group">
-                    <div class="input-group-addon">时间</div>
-                    <input type="text" id="payDate" name="payDate" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" onfocus="WdatePicker()" />
+            <div class="form-inline" id="payUser">
+                <div class="form-group">
+                    <div class="input-group">
+                            <div class="input-group-addon">时间</div>
+                            <input type="text" id="payDate" name="payDate" class="form-control" value="@ViewBag.CurrDate" onfocus="WdatePicker()" />
+                            <div class="input-group-addon" href="#" style="cursor: pointer" onclick="QueryCurrDate()">查询</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -93,58 +142,91 @@
     </div>
 </form>
 <script>
-    function add() {
-        var uploadPriceWithUserIdDate = $("#UploadPriceWithUserIDDate").val();
-        var AvgPriceWithUser = $("#AvgPriceWithUser").val();
-        var curruplod = "";
-        var avgprice = "";
-        var trs = '<tr>';
-        trs += "<td>" + $("#listCost tr").length + "</td>";
-        var payUser = $("#payUser input:checked");//付款人
-        if (payUser.length == 0)
-            return;
-        trs += "<td><input type='hidden' name='userid' value='" + $(payUser[0]).attr("data-userid") + "'/>" + $(payUser[0]).attr("data-username");
-        curruplod = $(payUser[0]).attr("data-userid") + "_";
-        if ($("#costMoney") == '') {
-            alert('请输入金额');
-            return;
-        }
-        trs += "<td>" + $("#costtype option:selected").text() + "</td>";
-        curruplod += $("#costtype").val() + "_";
-        trs += "<td>" + $("#payDate").val() + "</td>";
-        curruplod += $("#payDate").val() + "_";
-        trs += "<td>" + $("#costMoney").val() + "</td>";
-        curruplod += $("#costMoney").val();
-        var shareUser = $("#shareCost input[type='checkbox']");//分摊人
-        var avg = $("#costMoney").val() / parseFloat($("#shareCost input[type='checkbox']:checked").length);
-        if ($("#shareCost input[type='checkbox']:checked").length == 0) { alert("请选择分摊人"); return; }
-        trs += "<td>";
-        var shareUserList = "";
-        for (var i = 0; i < shareUser.length; i++) {
-            var userid = $(shareUser[i]).attr("data-userid");
-            var username = $(shareUser[i]).attr("data-username");
-            var summoney = $("#SumSharedUserID" + userid).attr('sumAvgMoney');
-            var capMoney = summoney;
-            if ($(shareUser[i]).prop("checked")) {
-                capMoney = (parseFloat(summoney) + avg).toFixed(2);
-                shareUserList += userid + ",";
-                trs += "<input type='hidden' name='shareId' value='" + userid + "' avgMoney='" + avg.toFixed(2) + "'/>" + username + "(" + avg.toFixed(2) + ")";
-            } else {
-                trs += "<input type='hidden' name='shareId' value='" + userid + "' avgMoney='0.00'/>" + username + "(" + 0.00 + ")";
+        function add() {
+            var uploadPriceWithUserIdDate = $("#UploadPriceWithUserIDDate").val();
+            var AvgPriceWithUser = $("#AvgPriceWithUser").val();
+            var curruplod = "";
+            var avgprice = "";
+            var trs = '<tr>';
+            trs += "<td>" + $("#listCost tr").length + "</td>";
+            var payUser = $("#payUser input:checked");//付款人
+            if (payUser.length == 0)
+                return;
+            trs += "<td><input type='hidden' name='userid' value='" + $(payUser[0]).attr("data-userid") + "'/>" + $(payUser[0]).attr("data-username");
+            curruplod = $(payUser[0]).attr("data-userid") + "_";
+            if ($("#costMoney") == '') {
+                alert('请输入金额');
+                return;
             }
-            $("#labSumSharedUserID" + userid).html("(" + capMoney + ")");
-            $("#SumSharedUserID" + userid).attr('sumAvgMoney', capMoney);
-            avgprice += userid + "_" + capMoney + ";";
+            trs += "<td>" + $("#costtype option:selected").text() + "</td>";
+            curruplod += $("#costtype").val() + "_";
+            trs += "<td>" + $("#payDate").val() + "</td>";
+            curruplod += $("#payDate").val() + "_";
+            trs += "<td class='text-right'>" + $("#costMoney").val() + "</td>";
+            curruplod += $("#costMoney").val();
+            var shareUser = $("#shareCost input[type='checkbox']");//分摊人
+            var avg = $("#costMoney").val() / parseFloat($("#shareCost input[type='checkbox']:checked").length);
+            if ($("#shareCost input[type='checkbox']:checked").length == 0) { alert("请选择分摊人"); return; }
+            trs += "<td>";
+            var shareUserList = "";
+            for (var i = 0; i < shareUser.length; i++) {
+                var userid = $(shareUser[i]).attr("data-userid");
+                var username = $(shareUser[i]).attr("data-username");
+                var summoney = $("#SumSharedUserID" + userid).attr('sumAvgMoney');
+                var capMoney = summoney;
+                if ($(shareUser[i]).prop("checked")) {
+                    capMoney = (parseFloat(summoney) + avg).toFixed(2);
+                    shareUserList += userid + ",";
+                    trs += "<input type='hidden' name='shareId' value='" + userid + "' avgMoney='" + avg.toFixed(2) + "'/>" + username + "(" + avg.toFixed(2) + ")";
+                } else {
+                    trs += "<input type='hidden' name='shareId' value='" + userid + "' avgMoney='0.00'/>" + username + "(" + 0.00 + ")";
+                }
+                $("#labSumSharedUserID" + userid).html("(" + capMoney + ")");
+                $("#SumSharedUserID" + userid).attr('sumAvgMoney', capMoney);
+                avgprice += userid + "_" + capMoney + ";";
+            }
+            shareUserList = shareUserList.substring(0, shareUserList.length - 1);
+            trs += "</td>";
+            trs += "<td class='text-center'><button type='button' class='btn btn-sm btn-danger' onclick='deleteLine(this)'>删除</button></td>";
+            trs += "</tr>";
+            $("#listCost >tbody").append(trs);
+            if (uploadPriceWithUserIdDate == '') {
+                $("#UploadPriceWithUserIDDate").val(curruplod + "_" + shareUserList);
+            } else {
+                $("#UploadPriceWithUserIDDate").val(uploadPriceWithUserIdDate + ";" + curruplod + "_" + shareUserList);
+            }
+            $("#AvgPriceWithUser").val(avgprice.substring(0, avgprice.length - 1));
         }
-        shareUserList = shareUserList.substring(0, shareUserList.length - 1);
-        trs += "</td>";
-        trs += "</tr>";
-        $("#listCost >tbody").append(trs);
-        if (uploadPriceWithUserIdDate == '') {
-            $("#UploadPriceWithUserIDDate").val(curruplod + "_" + shareUserList);
-        } else {
-            $("#UploadPriceWithUserIDDate").val(uploadPriceWithUserIdDate + ";" + curruplod + "_" + shareUserList);
+
+        function deleteLine(btn) {
+            var tr = $(btn).parent().parent();
+            calcCost(tr);
+            tr.remove();
         }
-        $("#AvgPriceWithUser").val(avgprice.substring(0, avgprice.length - 1));
-    }
+
+        function calcCost(tr) {
+            var uploadPriceArr = $("#UploadPriceWithUserIDDate").val().split(';');//包含每人付款
+            var shareUserIDArr = uploadPriceArr[tr.index()].split("_")[4].split(',');//分摊人ID
+            var avg = ($(tr).find("td:eq(4)").text() / shareUserIDArr.length).toFixed(2);//当前项的均值
+            var shareUser = $("#listCost >thead >tr >td:eq(5) >input");//分摊人
+            var avgprice = "";
+            for (var i = 0; i < shareUser.length; i++) {
+                var userid = $(shareUser[i]).attr("data-userid");
+                var summoney = $("#SumSharedUserID" + userid).attr('sumAvgMoney');
+                var currMoney = summoney;
+                if (shareUserIDArr.indexOf(userid) > -1) {
+                    currMoney = (summoney - avg).toFixed(2);
+                }
+                $("#labSumSharedUserID" + userid).html("(" + currMoney + ")");
+                $("#SumSharedUserID" + userid).attr('sumAvgMoney', currMoney);
+                avgprice += userid + "_" + currMoney + ";";
+            }
+            var uploadPriceArr2 = uploadPriceArr.slice(tr.index());
+            $("#UploadPriceWithUserIDDate").val(uploadPriceArr2.join(";"));
+            $("#AvgPriceWithUser").val(avgprice.substring(0, avgprice.length - 1));
+        }
+
+        function QueryCurrDate() {
+            window.location.href = "@Url.Action("Index","Home")?CurrDate=" + $('#payDate').val();
+        }
 </script>

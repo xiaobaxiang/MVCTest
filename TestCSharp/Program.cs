@@ -23,41 +23,41 @@ namespace TestCSharp
             //Console.WriteLine(s);
 
             #region 生成json的第二种方式:对于实体类重写tostring方法，然后list组合
-            //            Student s = new Student
-            //            {
-            //                Age = 13,
-            //                Name = "张三",
-            //                Comment = "asdfas"
-            //            };
-            //            s.CourseList=new List<Course>();
-            //            Course c = new Course();
-            //            c.CourseID = 1;
-            //            c.CourseName = "aaa";
-            //            Course c2 = new Course();
-            //            c2.CourseID = 2;
-            //            c2.CourseName = "bbb";
-            //            Course c3= new Course();
-            //            c3.CourseID = 3;
-            //            c3.CourseName = "ccc";
-            //            s.CourseList.Add(c);
-            //            s.CourseList.Add(c2);
-            //            s.CourseList.Add(c3);
-            //            Console.WriteLine(s.ToString());
+            //Student s = new Student
+            //{
+            //    Age = 13,
+            //    Name = "张三",
+            //    Comment = "asdfas"
+            //};
+            //s.CourseList = new List<Course>();
+            //Course c = new Course();
+            //c.CourseID = 1;
+            //c.CourseName = "aaa";
+            //Course c2 = new Course();
+            //c2.CourseID = 2;
+            //c2.CourseName = "bbb";
+            //Course c3 = new Course();
+            //c3.CourseID = 3;
+            //c3.CourseName = "ccc";
+            //s.CourseList.Add(c);
+            //s.CourseList.Add(c2);
+            //s.CourseList.Add(c3);
+            //Console.WriteLine(s.ToString());
 
-            //            Student s1 = new Student
-            //            {
-            //                Age = 16,
-            //                Name = "李四",
-            //                Comment = "fff"
-            //            };
-            //            //s1.CourseList.Add(c2);
-            //            //s1.CourseList.Add(c);
+            //Student s1 = new Student
+            //{
+            //    Age = 16,
+            //    Name = "李四",
+            //    Comment = "fff"
+            //};
+            ////s1.CourseList.Add(c2);
+            ////s1.CourseList.Add(c);
 
-            //            List<Student> lst = new List<Student>();
-            //            lst.Add(s);
-            //            lst.Add(s1);
+            //List<Student> lst = new List<Student>();
+            //lst.Add(s);
+            //lst.Add(s1);
 
-            //            File.WriteAllText("e:\\aaa.txt",lst.ToJson());
+            //File.WriteAllText("e:\\aaa.txt", lst.ToJson());
             #endregion
             //Console.WriteLine(lst.ToJson());
             //二进制序列化
@@ -85,16 +85,19 @@ namespace TestCSharp
             //启用一个线程来处理阻塞的数据集合
             //new Thread(new ThreadStart(RunBlock)).Start();
             #endregion
-            RedisClient Redis = new RedisClient("192.168.1.107", 6379);//redis服务IP和端口
+
+            #region redis
+            //RedisClient Redis = new RedisClient("192.168.1.107", 6379);//redis服务IP和端口
             //Redis.AddItemToList("listUsers","zhangsan");//Add
             //Redis.AddItemToList("listUsers", "lisi");
             //Redis.AddItemToList("listUsers", "wangwu");
 
             //GET
             //Console.WriteLine(Redis.GetAllKeys().ToJson());
-            Console.WriteLine(Redis.GetListCount("listUsers")+Redis.GetAllItemsFromList("listUsers").ToJson());
+            //Console.WriteLine(Redis.GetListCount("listUsers") + Redis.GetAllItemsFromList("listUsers").ToJson());
             //Redis.GetAllItemsFromList("city").ForEach(e=> {Console.WriteLine(e.ToString());});
             //Console.WriteLine(Redis.Get<string>("city"));
+            #endregion
             Console.ReadKey();
         }
         //public static void RunBlock()
@@ -195,19 +198,19 @@ namespace TestCSharp
 
         public override string ToString()
         {
-            return "{\"Age\":\"" + Age + "\",\"Name\":\"" + Name + "\",\"Comment\":\"" + Comment + "\",\"CourseList\":"+(CourseList==null?"null":CourseList.ToJson())+"}";
+            return "{\"Age\":\"" + Age + "\",\"Name\":\"" + Name + "\",\"Comment\":\"" + Comment + "\",\"CourseList\":" + (CourseList == null ? "null" : CourseList.ToJson()) + "}";
         }
     }
 
     public class Course
     {
         private int _courseid;
-        public int CourseID {get { return _courseid; }set {_courseid=value;} }
+        public int CourseID { get { return _courseid; } set { _courseid = value; } }
         private string _coursename;
-        public string CourseName {get { return _coursename; }set { _coursename = value; } }
+        public string CourseName { get { return _coursename; } set { _coursename = value; } }
         public override string ToString()
         {
-            return "{\"CourseID\":\""+CourseID+ "\",\"CourseName\":\""+CourseName+"\"}";
+            return "{\"CourseID\":\"" + CourseID + "\",\"CourseName\":\"" + CourseName + "\"}";
         }
     }
 
@@ -243,7 +246,7 @@ namespace TestCSharp
         {
             //if(lt==null)
             //    return "{\"LstName\":\"objName\",\"LstCount\":\"0\",\"LstArray\":null]}";
-            return "{\"LstName\":\""+lt.GetType().Name+"\",\"LstCount\":\"" + lt.Count + "\",\"LstArray\":[" + string.Join(",", lt)+"]}";
+            return "{\"LstName\":\"" + lt.GetType().Name + "\",\"LstCount\":\"" + lt.Count + "\",\"LstArray\":[" + string.Join(",", lt) + "]}";
         }
     }
 }

@@ -92,6 +92,10 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web.Services" />
     <Reference Include="System.EnterpriseServices" />
+    <Reference Include="Validate, Version=1.0.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Validate.1.0.3\lib\net452\Validate.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Web.Razor">
@@ -181,6 +185,7 @@
     <Content Include="scripts\jquery-1.10.2.min.map" />
     <Content Include="Error.html" />
     <Content Include="Views\Home\ShowCost.cshtml" />
+    <Content Include="Views\Home\TestDataAnnotations.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

@@ -12,7 +12,7 @@ namespace Account.Controllers
     {
         DBhelper dbh = new DBhelper();
         // GET: Home
-        public ActionResult Index()
+        public ActionResult Index(string CurrDate="")
         {
             string sqlstr = "select * from [UserInfo] where StatusNO='A'";
             DataSet oDS = dbh.ExecuteQuery(sqlstr);
@@ -21,6 +21,21 @@ namespace Account.Controllers
             oDS = dbh.ExecuteQuery(sqlstr);
             List<TypeInfo> list = oDS.Tables[0].TabeToList<TypeInfo>().ToList();
             ViewBag.listTypeInfo = list;
+            DateTime dt;
+            if (CurrDate == ""||!DateTime.TryParse(CurrDate,out dt)) CurrDate = DateTime.Now.ToString("yyyy-MM-dd");
+            sqlstr = "select * from Cost where CurrDate=@CurrDate";
+            SqlParameter[] spm = {new SqlParameter("@CurrDate",SqlDbType.DateTime) };
+            spm[0].Value = CurrDate;
+            oDS = dbh.ExecuteQuery(sqlstr, spm);
+            List<Cost> listc = oDS.Tables[0].TabeToList<Cost>().ToList();
+            ViewBag.listCostInfo = listc;
+            sqlstr = "select * from Reporter where CurrDate=@CurrDate";
+            SqlParameter[] spmr = { new SqlParameter("@CurrDate", SqlDbType.DateTime) };
+            spmr[0].Value = CurrDate;
+            oDS = dbh.ExecuteQuery(sqlstr, spmr);
+            List<Reporter> listr = oDS.Tables[0].TabeToList<Reporter>().ToList();
+            ViewBag.listReportInfo = listr;
+            ViewBag.CurrDate = CurrDate;
             return View(lisu);
         }
 
@@ -60,12 +75,13 @@ namespace Account.Controllers
             string[] UserModel = UploadPriceWithUserIDDate.Split(';');
             DateTime dtnow = DateTime.Now;
             oDS = dbh.ExecuteQuery(sqlstr);
+            DateTime currDate = payDate.StringConvert<DateTime>();
             foreach (string u in UserModel)
             {
                 string[] cell = u.Split('_');
                 if (cell.Length < 5) { continue; }
                 int UserID = cell[0].StringConvert<int>(), TypeID = cell[1].StringConvert<int>();
-                DateTime currDate = cell[2].StringConvert<DateTime>();
+                //DateTime currDate = payDate.StringConvert<DateTime>(); //取一致的payDate cell[2].StringConvert<DateTime>();
                 decimal Cost = cell[3].StringConvert<decimal>();
                 //if (!int.TryParse(cell[0], out UserID)) { continue; }//人
                 //if (!int.TryParse(cell[1], out TypeID)) { continue; }//类型
@@ -100,7 +116,7 @@ namespace Account.Controllers
                 Reporter r = new Reporter();
                 r.UserID = e.Id;
                 r.AvgCost = 0.00M;
-                r.CurrDate = new DateTime(Convert.ToInt32(payDate.Split('-')[0]), Convert.ToInt32(payDate.Split('-')[1]), Convert.ToInt32(payDate.Split('-')[2]));
+                r.CurrDate = currDate;//new DateTime(Convert.ToInt32(payDate.Split('-')[0]), Convert.ToInt32(payDate.Split('-')[1]), Convert.ToInt32(payDate.Split('-')[2]));
                 r.Flag = "F";
                 r.AddDate = dtnow;
                 diccost.Add(e.Id, r);
@@ -218,6 +234,18 @@ namespace Account.Controllers
             spm[1].Value = hdateEnd + " 23:59:59";
             int nResutl = dbh.ExecuteResult(sqlstr, spm);
             Response.Redirect(Url.Action("ShowCost", "Home") + "?dateStart=" + hdateStart + "&dateEnd=" + hdateEnd);
+        }
+
+        [HttpGet]
+        public ActionResult TestDataAnnotations()
+        {
+            UserInfo u=new UserInfo();
+            return View(u);
+        }
+        [HttpPost]
+        public ActionResult TestDataAnnotations(UserInfo u)
+        {
+            return RedirectToAction("Index");
         }
     }
 }
