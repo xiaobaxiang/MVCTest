@@ -10,6 +10,9 @@ using System.Text;
 using System.Threading;
 using System.Xml.Serialization;
 using ServiceStack.Redis;
+using Spire.Doc;
+using Spire.Doc.Documents;
+using Spire.Doc.Fields;
 
 namespace TestCSharp
 {
@@ -98,6 +101,17 @@ namespace TestCSharp
             //Redis.GetAllItemsFromList("city").ForEach(e=> {Console.WriteLine(e.ToString());});
             //Console.WriteLine(Redis.Get<string>("city"));
             #endregion
+
+            //FileStream fs = new FileStream(AppDomain.CurrentDomain.BaseDirectory + "\\TestDOC.docx", FileMode.OpenOrCreate);
+            using (Spire.Doc.Document doc = new Document())
+            {
+               Section select1= doc.AddSection();
+               Paragraph paragraph1= select1.AddParagraph();
+                paragraph1.AppendText("Spire测试word生成");
+                // doc.SaveToFile(AppDomain.CurrentDomain.BaseDirectory + "\\TestDOC.docx",FileFormat.Docx);
+                doc.SaveToFile(AppDomain.CurrentDomain.BaseDirectory + "\\TestDOC.pdf", FileFormat.PDF);
+            }
+            
             Console.ReadKey();
         }
         //public static void RunBlock()
