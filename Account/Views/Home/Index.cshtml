@@ -221,8 +221,11 @@
                 $("#SumSharedUserID" + userid).attr('sumAvgMoney', currMoney);
                 avgprice += userid + "_" + currMoney + ";";
             }
-            var uploadPriceArr2 = uploadPriceArr.slice(tr.index());
-            $("#UploadPriceWithUserIDDate").val(uploadPriceArr2.join(";"));
+            console.log(uploadPriceArr);
+            uploadPriceArr.splice(tr.index(), 1);
+            console.log(uploadPriceArr);
+            console.log(tr.index());
+            $("#UploadPriceWithUserIDDate").val(uploadPriceArr.join(";"));
             $("#AvgPriceWithUser").val(avgprice.substring(0, avgprice.length - 1));
         }
 
